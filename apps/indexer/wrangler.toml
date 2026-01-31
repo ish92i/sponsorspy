@@ -1,0 +1,8 @@
+name = "sponsorspy-indexer"
+main = "dist/index.js"
+compatibility_date = "2024-01-01"
+account_id = ""
+workers_dev = true
+
+[env.development]
+routes = []
