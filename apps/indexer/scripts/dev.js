@@ -1,38 +1,41 @@
 #!/usr/bin/env node
-import { spawn } from "child_process";
+import { execSync } from "child_process";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
-const srcDir = path.join(projectRoot, "src");
 const distFile = path.join(projectRoot, "dist", "index.js");
 
-let buildProcess = null;
-let httpServer = null;
+// Load .env
+dotenv.config({ path: path.join(projectRoot, ".env") });
 
-function buildAndWatch() {
-  console.log("📦 Building with esbuild...");
-  
-  buildProcess = spawn("npx", ["esbuild", "src/index.ts", "--bundle", "--outfile=dist/index.js", "--platform=neutral", "--format=esm", "--watch"], {
-    cwd: projectRoot,
-    stdio: "inherit",
-  });
+const env = {
+  CONVEX_DEPLOYMENT_URL: process.env.CONVEX_DEPLOYMENT_URL,
+  CONVEX_INTERNAL_AUTH_TOKEN: process.env.CONVEX_INTERNAL_AUTH_TOKEN,
+  LOGO_DEV_KEY: process.env.LOGO_DEV_KEY,
+};
 
-  buildProcess.on("error", (err) => {
-    console.error("Build process error:", err);
-  });
-
-  buildProcess.on("close", (code) => {
-    if (code !== 0 && code !== null) {
-      console.error(`Build process exited with code ${code}`);
-    }
-  });
+async function build() {
+  console.log("📦 Building indexer...");
+  try {
+    execSync(`npx esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --format=esm "--banner:js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);" --external:node:*`, {
+      cwd: projectRoot,
+      stdio: "inherit",
+    });
+    console.log("✅ Build successful");
+  } catch (err) {
+    console.error("❌ Build failed");
+    process.exit(1);
+  }
 }
 
 async function loadWorkerModule() {
   try {
+    // Import with timestamp to bypass cache
     const module = await import(`file://${distFile}?t=${Date.now()}`);
     return module.default || module;
   } catch (err) {
@@ -59,11 +62,13 @@ async function startServer() {
         method: req.method,
         headers: req.headers,
         body: req.method !== "GET" && req.method !== "HEAD" ? req : null,
+        duplex: 'half'
       });
 
-      const response = await handler.fetch(request);
+      const response = await handler.fetch(request, env);
       
-      res.writeHead(response.status, Object.fromEntries(response.headers));
+      const responseHeaders = Object.fromEntries(response.headers);
+      res.writeHead(response.status, responseHeaders);
       res.end(await response.text());
     } catch (err) {
       console.error("Request error:", err);
@@ -72,52 +77,14 @@ async function startServer() {
     }
   });
 
-  httpServer = server;
   server.listen(8787, () => {
     console.log("✨ Server ready on http://localhost:8787");
   });
-
-  return server;
 }
 
-async function startDev() {
-  console.log("🚀 Starting SponsorSpy Indexer dev server...");
-  console.log("📁 Watching for changes in:", srcDir);
-  
-  buildAndWatch();
-  
-  // Wait for initial build to complete
-  setTimeout(async () => {
-    await startServer();
-  }, 3000);
+async function run() {
+  await build();
+  await startServer();
 }
 
-function shutdown() {
-  console.log("\n📛 Shutting down...");
-  
-  // Close HTTP server
-  if (httpServer) {
-    httpServer.close(() => {
-      console.log("✓ HTTP server closed");
-    });
-  }
-  
-  // Kill build process and its children
-  if (buildProcess) {
-    try {
-      process.kill(-buildProcess.pid); // Kill process group
-    } catch {
-      buildProcess.kill(); // Fallback
-    }
-    console.log("✓ Build process killed");
-  }
-  
-  setTimeout(() => {
-    process.exit(0);
-  }, 500);
-}
-
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
-
-startDev();
+run();

@@ -4,13 +4,17 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.js",
-    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=neutral --format=esm",
+    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=neutral --format=esm --external:node:* --external:stream --external:stream/web",
     "preview": "miniflare dist/index.js"
   },
   "dependencies": {
-    "@sponsorspy/env": "workspace:*"
+    "@sponsorspy/env": "workspace:*",
+    "@ybd-project/ytdl-core": "^6.0.8",
+    "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
+    "dotenv": "catalog:",
     "esbuild": "^0.23.0",
     "typescript": "catalog:"
   }
