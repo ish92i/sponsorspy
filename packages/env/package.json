@@ -13,7 +13,6 @@
   },
   "devDependencies": {
     "@sponsorspy/config": "workspace:*",
-    "@sponsorspy/infra": "workspace:*",
     "typescript": "catalog:"
   }
 }

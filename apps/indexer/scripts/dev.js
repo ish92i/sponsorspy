@@ -10,7 +10,7 @@ const srcDir = path.join(projectRoot, "src");
 const distFile = path.join(projectRoot, "dist", "index.js");
 
 let buildProcess = null;
-let currentHandler = null;
+let httpServer = null;
 
 function buildAndWatch() {
   console.log("📦 Building with esbuild...");
@@ -72,6 +72,7 @@ async function startServer() {
     }
   });
 
+  httpServer = server;
   server.listen(8787, () => {
     console.log("✨ Server ready on http://localhost:8787");
   });
@@ -91,10 +92,32 @@ async function startDev() {
   }, 3000);
 }
 
-process.on("SIGINT", () => {
+function shutdown() {
   console.log("\n📛 Shutting down...");
-  if (buildProcess) buildProcess.kill();
-  process.exit(0);
-});
+  
+  // Close HTTP server
+  if (httpServer) {
+    httpServer.close(() => {
+      console.log("✓ HTTP server closed");
+    });
+  }
+  
+  // Kill build process and its children
+  if (buildProcess) {
+    try {
+      process.kill(-buildProcess.pid); // Kill process group
+    } catch {
+      buildProcess.kill(); // Fallback
+    }
+    console.log("✓ Build process killed");
+  }
+  
+  setTimeout(() => {
+    process.exit(0);
+  }, 500);
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 startDev();
