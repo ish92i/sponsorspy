@@ -24,7 +24,6 @@ export default defineSchema({
     thumbnail: v.string(),
     viewCount: v.number(),
     likeCount: v.number(),
-    commentCount: v.number(),
     uploadDate: v.number(),
     link: v.string(),
   })
@@ -34,7 +33,6 @@ export default defineSchema({
     .index("by_sponsorId_creatorId", ["sponsorId", "creatorId"]),
   sponsors: defineTable({
     name: v.string(),
-    description: v.string(),
     logo: v.string(),
     website: v.string(),
     firstSeen: v.number(),
@@ -55,6 +53,12 @@ export default defineSchema({
     videoCount: v.number(),
     firstSeen: v.number(),
     lastSeen: v.number(),
+    firstVideoTitle: v.string(),
+    firstVideoThumbnail: v.string(),
+    firstVideoLink: v.string(),
+    lastVideoTitle: v.string(),
+    lastVideoThumbnail: v.string(),
+    lastVideoLink: v.string(),
   })
     .index("by_creatorId", ["creatorId"])
     .index("by_sponsorId", ["sponsorId"])

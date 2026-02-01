@@ -16,7 +16,8 @@ dotenv.config({ path: path.join(projectRoot, ".env") });
 const env = {
   CONVEX_DEPLOYMENT_URL: process.env.CONVEX_DEPLOYMENT_URL,
   CONVEX_INTERNAL_AUTH_TOKEN: process.env.CONVEX_INTERNAL_AUTH_TOKEN,
-  LOGO_DEV_KEY: process.env.LOGO_DEV_KEY,
+  LOGO_DEV_SECRET_KEY: process.env.LOGO_DEV_SECRET_KEY,
+  LOGO_DEV_PUBLISHABLE_KEY: process.env.LOGO_DEV_PUBLISHABLE_KEY,
 };
 
 async function build() {

@@ -21,12 +21,13 @@ async function upsertSponsor(ctx: MutationCtx, args: any) {
     .withIndex("by_website", (q) => q.eq("website", args.website))
     .unique();
 
-  const now = Date.now();
+  const { uploadDate, ...sponsorData } = args;
+
   if (existing) {
-    await ctx.db.patch(existing._id, { lastSeen: now });
+    await ctx.db.patch(existing._id, { lastSeen: uploadDate });
     return existing._id;
   }
-  return await ctx.db.insert("sponsors", { ...args, firstSeen: now, lastSeen: now });
+  return await ctx.db.insert("sponsors", { ...sponsorData, firstSeen: uploadDate, lastSeen: uploadDate });
 }
 
 async function recordVideo(ctx: MutationCtx, args: any) {
@@ -47,16 +48,14 @@ async function recordVideo(ctx: MutationCtx, args: any) {
       thumbnail: args.thumbnail,
       viewCount: args.viewCount,
       likeCount: args.likeCount,
-      commentCount: args.commentCount,
       uploadDate: args.uploadDate,
       link: args.link,
     });
   } else {
-    console.log(`[Convex] Patching existing video: ${args.title} (likes: ${args.likeCount}, comments: ${args.commentCount})`);
+    console.log(`[Convex] Patching existing video: ${args.title} (likes: ${args.likeCount})`);
     await ctx.db.patch(existing._id, {
       viewCount: args.viewCount,
       likeCount: args.likeCount,
-      commentCount: args.commentCount,
     });
   }
 
@@ -67,14 +66,16 @@ async function recordVideo(ctx: MutationCtx, args: any) {
     )
     .unique();
 
-  const now = Date.now();
   if (relation) {
     await ctx.db.patch(relation._id, {
       videoCount: relation.videoCount + (existing ? 0 : 1),
-      lastSeen: now,
+      lastSeen: args.uploadDate,
       subscribers: args.creatorData.subscribers,
       avgViews: args.creatorData.avgViews,
       avgLikes: args.creatorData.avgLikes,
+      lastVideoTitle: args.title,
+      lastVideoThumbnail: args.thumbnail,
+      lastVideoLink: args.link,
     });
   } else {
     await ctx.db.insert("creator_sponsors", {
@@ -90,8 +91,14 @@ async function recordVideo(ctx: MutationCtx, args: any) {
       avgViews: args.creatorData.avgViews,
       avgLikes: args.creatorData.avgLikes,
       videoCount: 1,
-      firstSeen: now,
-      lastSeen: now,
+      firstSeen: args.uploadDate,
+      lastSeen: args.uploadDate,
+      firstVideoTitle: args.title,
+      firstVideoThumbnail: args.thumbnail,
+      firstVideoLink: args.link,
+      lastVideoTitle: args.title,
+      lastVideoThumbnail: args.thumbnail,
+      lastVideoLink: args.link,
     });
   }
 }
@@ -112,12 +119,10 @@ export const processBatch = internalMutation({
       thumbnail: v.string(),
       viewCount: v.number(),
       likeCount: v.number(),
-      commentCount: v.number(),
       uploadDate: v.number(),
       link: v.string(),
       sponsor: v.object({
         name: v.string(),
-        description: v.string(),
         logo: v.string(),
         website: v.string(),
       }),
@@ -127,8 +132,8 @@ export const processBatch = internalMutation({
     const creatorId = await upsertCreator(ctx, args.creator);
     
     for (const video of args.videos) {
-      const sponsorId = await upsertSponsor(ctx, video.sponsor);
-      await recordVideo(ctx, {
+       const sponsorId = await upsertSponsor(ctx, { ...video.sponsor, uploadDate: video.uploadDate });
+       await recordVideo(ctx, {
         creatorId,
         sponsorId,
         ...video,

@@ -1,5 +1,5 @@
 {
-  "name": "@sponsorspy/indexer",
+  "name": "@sponsorspy/crawler",
   "version": "0.0.1",
   "type": "module",
   "scripts": {

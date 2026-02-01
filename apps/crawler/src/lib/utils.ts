@@ -23,6 +23,9 @@ export function isSocialLink(url: string): boolean {
       "soundcloud.com",
       "apple.com", // music.apple.com
       "merch", // generic merch keyword check might be needed in path
+      "app.link", // Deep linking service
+      "onelink.me", // AppsFlyer OneLink
+      "bit.ly", "short.link", "ow.ly", // Shorteners
     ];
     
     // Check for exact matches or subdomains
@@ -52,7 +55,16 @@ export function extractFirstLink(text: string): string | null {
 export function normalizeDomain(url: string): string {
   try {
     const u = new URL(url);
-    return u.hostname.replace(/^www\./, "").toLowerCase();
+    let hostname = u.hostname.replace(/^www\./, "").toLowerCase();
+    
+    // Extract root domain from subdomains (e.g., "onboarding.rocketmoney.com" -> "rocketmoney.com")
+    const parts = hostname.split(".");
+    if (parts.length > 2) {
+      // Keep only the last two parts (domain.tld)
+      hostname = parts.slice(-2).join(".");
+    }
+    
+    return hostname;
   } catch (e) {
     return "";
   }

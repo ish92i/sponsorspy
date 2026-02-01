@@ -1,29 +1,31 @@
 export interface SponsorData {
   name: string;
-  description: string;
   logo: string;
   website: string;
 }
 
-export async function getCompanyData(domain: string, apiKey: string): Promise<SponsorData | null> {
+export async function getCompanyData(
+  domain: string,
+  secretKey: string,
+  publishableKey: string
+): Promise<SponsorData | null> {
   if (!domain) return null;
 
   // Initial fallback data
   const fallback: SponsorData = {
     name: domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1),
-    description: "",
-    logo: `https://img.logo.dev/${domain}?token=${apiKey}`,
+    logo: `https://img.logo.dev/${domain}?token=${publishableKey}`,
     website: `https://${domain}`
   };
 
-  if (!apiKey || apiKey === "your_logo_dev_key_here") {
+  if (!secretKey || secretKey === "your_logo_dev_key_here") {
     return fallback;
   }
 
   try {
     const res = await fetch(`https://api.logo.dev/describe/${domain}`, {
       headers: {
-        "Authorization": `Bearer ${apiKey}`
+        "Authorization": `Bearer ${secretKey}`
       }
     });
 
@@ -35,9 +37,8 @@ export async function getCompanyData(domain: string, apiKey: string): Promise<Sp
     
     return {
       name: data.name || fallback.name,
-      description: data.description || "",
-      logo: data.logo || fallback.logo,
-      website: data.website || fallback.website
+      logo: `https://img.logo.dev/${domain}?token=${publishableKey}`,
+      website: `https://${domain}`
     };
   } catch (e) {
     console.error(`Error fetching logo.dev for ${domain}:`, e);

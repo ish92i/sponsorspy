@@ -12,7 +12,6 @@ export const CreatorSchema = z.object({
 
 export const SponsorSchema = z.object({
   name: z.string(),
-  description: z.string(),
   logo: z.string(),
   website: z.string(),
 });
@@ -22,7 +21,6 @@ export const VideoSchema = z.object({
   thumbnail: z.string(),
   viewCount: z.number(),
   likeCount: z.number(),
-  commentCount: z.number(),
   uploadDate: z.number(),
   link: z.string(),
   sponsor: SponsorSchema,

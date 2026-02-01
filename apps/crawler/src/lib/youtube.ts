@@ -18,7 +18,6 @@ export interface VideoInfo {
   thumbnail: string;
   viewCount: number;
   likeCount: number;
-  commentCount: number; // ytdl might not return this easily without full load
   uploadDate: number; // timestamp
   description: string;
   url: string;
@@ -134,26 +133,6 @@ export class YouTubeProvider {
 
       // Extract likes
       const likeCount = typeof details.likes === 'number' ? details.likes : (this.parseCount(details.likes?.toString()) || 0);
-      
-      // Try to find comment count
-      let commentCount = 0;
-      
-      // Check if ytdl parsed it
-      if ((info as any).commentCount) {
-          commentCount = (info as any).commentCount;
-      } else {
-          // Look into InnerTube responses
-          const nextRes = (info as any).nextResponse || (info as any).next_response;
-          if (nextRes) {
-              // Try various paths in InnerTube 'next' response for comment count
-              const countText = nextRes.contents?.twoColumnWatchNextResults?.results?.results?.contents?.find((c: any) => c.itemSectionRenderer?.targetId === "comments")?.itemSectionRenderer?.contents?.[0]?.commentsEntryPointHeaderRenderer?.commentCount?.simpleText ||
-                                nextRes.contents?.twoColumnWatchNextResults?.results?.results?.contents?.[3]?.itemSectionRenderer?.contents?.[0]?.commentsEntryPointHeaderRenderer?.commentCount?.simpleText;
-              
-              if (countText) {
-                  commentCount = this.parseCount(countText);
-              }
-          }
-      }
 
       return {
         id: videoId,
@@ -161,7 +140,6 @@ export class YouTubeProvider {
         thumbnail: details.thumbnails[0]?.url || "",
         viewCount: typeof details.viewCount === 'string' ? parseInt(details.viewCount) : (details.viewCount || 0),
         likeCount: likeCount, 
-        commentCount: commentCount,
         uploadDate: details.publishDate ? new Date(details.publishDate).getTime() : 0,
         description: details.description || "",
         url: details.video_url || details.videoUrl
