@@ -99,6 +99,11 @@ export default {
         }))
       };
 
+      // Debug: Log first video's like count
+      if (processedVideos.length > 0) {
+        logs.push(`First video likeCount: ${processedVideos[0].likeCount}, commentCount: ${processedVideos[0].commentCount}`);
+      }
+
       const convexRes = await fetch(convexUrl, {
         method: "POST",
         headers: {
