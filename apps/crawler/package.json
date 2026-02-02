@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.js",
-    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=neutral --format=esm --external:node:* --external:stream --external:stream/web",
+    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --format=esm --external:node:* \"--banner:js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
     "preview": "miniflare dist/index.js"
   },
   "dependencies": {

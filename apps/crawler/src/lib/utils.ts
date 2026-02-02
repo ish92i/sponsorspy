@@ -111,3 +111,66 @@ export async function followRedirects(url: string, maxRedirects = 5): Promise<st
   }
   return currentUrl;
 }
+
+function levenshteinDistance(str1: string, str2: string): number {
+  const track = Array(str2.length + 1).fill(null).map(() =>
+    Array(str1.length + 1).fill(null)
+  );
+
+  for (let i = 0; i <= str1.length; i += 1) {
+    track[0][i] = i;
+  }
+  for (let j = 0; j <= str2.length; j += 1) {
+    track[j][0] = j;
+  }
+
+  for (let j = 1; j <= str2.length; j += 1) {
+    for (let i = 1; i <= str1.length; i += 1) {
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      track[j][i] = Math.min(
+        track[j][i - 1] + 1,
+        track[j - 1][i] + 1,
+        track[j - 1][i - 1] + indicator
+      );
+    }
+  }
+
+  return track[str2.length][str1.length];
+}
+
+export function isYoutuberOwnDomain(domain: string, youtuberName: string): boolean {
+  // Normalize both strings
+  const normalizedDomain = domain.toLowerCase().replace(/^www\./, "");
+  const normalizedName = youtuberName.toLowerCase();
+
+  // Remove special characters and spaces from the YouTuber name
+  const nameVariations = [
+    normalizedName,
+    normalizedName.replace(/\s+/g, ""),
+    normalizedName.replace(/[^a-z0-9]/g, "")
+  ];
+
+  for (const variation of nameVariations) {
+    // Check for exact substring match (e.g., "mrbeast" in "mrbeast.store")
+    if (normalizedDomain.includes(variation) && variation.length > 2) {
+      // Additional check: make sure it's a significant portion of the domain
+      // If domain starts or is mostly the YouTuber name, likely their own site
+      const domainWithoutTld = normalizedDomain.split(".")[0];
+      if (domainWithoutTld.includes(variation) || variation.includes(domainWithoutTld)) {
+        return true;
+      }
+    }
+
+    // Levenshtein distance check for typos (e.g., "mrbeast" vs "mrbeast")
+    if (variation.length > 3) {
+      const distance = levenshteinDistance(variation, normalizedDomain.split(".")[0]);
+      const similarity = 1 - distance / Math.max(variation.length, normalizedDomain.split(".")[0].length);
+      if (similarity > 0.85) {
+        // Very similar, likely own domain
+        return true;
+      }
+    }
+  }
+
+  return false;
+}

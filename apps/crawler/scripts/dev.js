@@ -5,10 +5,12 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import fs from "fs";
+import { watch } from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
 const distFile = path.join(projectRoot, "dist", "index.js");
+const srcDir = path.join(projectRoot, "src");
 
 // Load .env
 dotenv.config({ path: path.join(projectRoot, ".env") });
@@ -20,18 +22,37 @@ const env = {
   LOGO_DEV_PUBLISHABLE_KEY: process.env.LOGO_DEV_PUBLISHABLE_KEY,
 };
 
+let isBuilding = false;
+
 async function build() {
+  if (isBuilding) return;
+  isBuilding = true;
+  
   console.log("📦 Building indexer...");
   try {
-    execSync(`npx esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --format=esm "--banner:js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);" --external:node:*`, {
+    execSync(`esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --format=esm --external:node:* "--banner:js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);"`, {
       cwd: projectRoot,
       stdio: "inherit",
     });
-    console.log("✅ Build successful");
+    console.log("✅ Build successful at", new Date().toLocaleTimeString());
   } catch (err) {
     console.error("❌ Build failed");
-    process.exit(1);
+  } finally {
+    isBuilding = false;
   }
+}
+
+function watchSrcDirectory() {
+  console.log("👁️  Watching for changes in src directory...");
+  
+  const watcher = watch(srcDir, { recursive: true }, (eventType, filename) => {
+    if (filename && (filename.endsWith('.ts') || filename.endsWith('.js'))) {
+      console.log(`\n📝 Detected change in ${filename}`);
+      build();
+    }
+  });
+  
+  return watcher;
 }
 
 async function loadWorkerModule() {
@@ -85,6 +106,7 @@ async function startServer() {
 
 async function run() {
   await build();
+  watchSrcDirectory();
   await startServer();
 }
 

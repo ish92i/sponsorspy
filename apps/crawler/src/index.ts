@@ -1,6 +1,6 @@
 import { YouTubeProvider } from "./lib/youtube";
 import { getCompanyData } from "./lib/sponsor";
-import { extractFirstLink, followRedirects, isSocialLink, normalizeDomain } from "./lib/utils";
+import { extractFirstLink, followRedirects, isSocialLink, normalizeDomain, isYoutuberOwnDomain } from "./lib/utils";
 import { IngestBatchSchema } from "./lib/schemas";
 
 async function processVideo(videoId: string, env: Env): Promise<Response> {
@@ -42,6 +42,13 @@ async function processVideo(videoId: string, env: Env): Promise<Response> {
     
     if (isSocialLink(finalUrl)) {
       return new Response(JSON.stringify({ error: "Link is a social/redirect link", debug: logs }), { 
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    if (isYoutuberOwnDomain(domain, details.channelName || "")) {
+      return new Response(JSON.stringify({ error: "Link appears to be the YouTuber's own domain", debug: logs }), { 
         status: 400,
         headers: { "Content-Type": "application/json" }
       });
@@ -154,6 +161,11 @@ export default {
           
           if (isSocialLink(finalUrl)) {
             logs.push(`  → Filtered: Social link`);
+            continue;
+          }
+
+          if (isYoutuberOwnDomain(domain, channel.channelName)) {
+            logs.push(`  → Filtered: YouTuber's own domain`);
             continue;
           }
 
