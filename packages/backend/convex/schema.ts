@@ -66,4 +66,15 @@ export default defineSchema({
     .index("by_subscribers", ["subscribers"])
     .index("by_avgViews", ["avgViews"])
     .index("by_avgLikes", ["avgLikes"]),
-});
+  crawler_queue: defineTable({
+    handle: v.string(),
+    status: v.union(v.literal("pending"), v.literal("crawled"), v.literal("failed")),
+    discoveredFrom: v.optional(v.string()),
+    addedAt: v.number(),
+    lastAttempt: v.optional(v.number()),
+    failureReason: v.optional(v.string()),
+  })
+    .index("by_status", ["status"])
+    .index("by_handle", ["handle"])
+    .index("by_status_addedAt", ["status", "addedAt"]),
+  });

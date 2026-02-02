@@ -9,10 +9,13 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as cron from "../cron.js";
+import type * as discovery from "../discovery.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as ingest from "../ingest.js";
 import type * as privateData from "../privateData.js";
+import type * as scheduler from "../scheduler.js";
 
 import type {
   ApiFromModules,
@@ -22,10 +25,13 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  cron: typeof cron;
+  discovery: typeof discovery;
   healthCheck: typeof healthCheck;
   http: typeof http;
   ingest: typeof ingest;
   privateData: typeof privateData;
+  scheduler: typeof scheduler;
 }>;
 
 /**

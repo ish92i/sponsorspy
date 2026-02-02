@@ -184,45 +184,59 @@ export default {
       }
 
       // 5. Send to Convex
-      const convexUrl = new URL("/ingest", env.CONVEX_DEPLOYMENT_URL).toString();
-      const payload = {
-        creator: {
-            youtubeHandle: channel.youtubeHandle,
-            channelName: channel.channelName,
-            channelUrl: channel.channelUrl,
-            channelPfp: channel.channelPfp,
-            subscribers: channel.subscribers,
-            avgViews: channel.avgViews,
-            avgLikes: channel.avgLikes
-        },
-        videos: processedVideos.map(v => ({
-            title: v.title,
-            thumbnail: v.thumbnail,
-            viewCount: v.viewCount,
-            likeCount: v.likeCount,
-            uploadDate: v.uploadDate,
-            link: v.url,
-            sponsor: v.sponsor
-        }))
-      };
+       const convexUrl = new URL("/ingest", env.CONVEX_DEPLOYMENT_URL).toString();
+       const payload = {
+         creator: {
+             youtubeHandle: channel.youtubeHandle,
+             channelName: channel.channelName,
+             channelUrl: channel.channelUrl,
+             channelPfp: channel.channelPfp,
+             subscribers: channel.subscribers,
+             avgViews: channel.avgViews,
+             avgLikes: channel.avgLikes
+         },
+         videos: processedVideos.map(v => ({
+             title: v.title,
+             thumbnail: v.thumbnail,
+             viewCount: v.viewCount,
+             likeCount: v.likeCount,
+             uploadDate: v.uploadDate,
+             link: v.url,
+             sponsor: v.sponsor
+         }))
+       };
 
-      // Debug: Log first video's like count
-      if (processedVideos.length > 0) {
-        logs.push(`First video likeCount: ${processedVideos[0].likeCount}`);
-      }
+       // Debug: Log first video's like count
+       if (processedVideos.length > 0) {
+         logs.push(`First video likeCount: ${processedVideos[0].likeCount}`);
+       }
 
-      const convexRes = await fetch(convexUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${env.CONVEX_INTERNAL_AUTH_TOKEN}`
-        },
-        body: JSON.stringify(payload)
-      });
+       const convexRes = await fetch(convexUrl, {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+           "Authorization": `Bearer ${env.CONVEX_INTERNAL_AUTH_TOKEN}`
+         },
+         body: JSON.stringify(payload)
+       });
 
-      if (!convexRes.ok) {
-        throw new Error(`Convex ingestion failed: ${await convexRes.text()}`);
-      }
+       if (!convexRes.ok) {
+         throw new Error(`Convex ingestion failed: ${await convexRes.text()}`);
+       }
+
+       // 6. Mark in crawler queue as crawled (if it came from queue)
+       if (url.searchParams.get("queueId")) {
+         const queueId = url.searchParams.get("queueId");
+         const queueUpdateUrl = new URL("/markCrawled", env.CONVEX_DEPLOYMENT_URL).toString();
+         await fetch(queueUpdateUrl, {
+           method: "POST",
+           headers: {
+             "Content-Type": "application/json",
+             "Authorization": `Bearer ${env.CONVEX_INTERNAL_AUTH_TOKEN}`
+           },
+           body: JSON.stringify({ queueId })
+         });
+       }
 
       return new Response(JSON.stringify({ 
         success: true, 
