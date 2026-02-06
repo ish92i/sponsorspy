@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "turbo dev",
-    "dev:web": "turbo -F web dev",
+    "dev:web": "turbo -F @sponsorspy/web dev",
     "dev:crawler": "turbo -F @sponsorspy/crawler dev",
     "dev:server": "turbo -F @sponsorspy/backend dev",
     "dev:setup": "turbo -F @sponsorspy/backend dev:setup",
@@ -29,7 +29,8 @@
     "@sponsorspy/config": "workspace:*",
     "turbo": "^2.6.3",
     "typescript": "catalog:",
-    "ultracite": "7.1.1"
+    "ultracite": "7.1.1",
+    "vite": "^7.3.1"
   },
   "packageManager": "pnpm@10.17.1"
 }

@@ -16,6 +16,7 @@ import type * as http from "../http.js";
 import type * as ingest from "../ingest.js";
 import type * as privateData from "../privateData.js";
 import type * as scheduler from "../scheduler.js";
+import type * as search from "../search.js";
 
 import type {
   ApiFromModules,
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   ingest: typeof ingest;
   privateData: typeof privateData;
   scheduler: typeof scheduler;
+  search: typeof search;
 }>;
 
 /**

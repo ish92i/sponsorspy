@@ -1,10 +1,11 @@
 {
-  "name": "web",
+  "name": "@sponsorspy/web",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "vite build",
     "serve": "vite preview",
+    "dev": "vite dev",
     "dev:bare": "vite dev"
   },
   "dependencies": {
@@ -55,6 +56,7 @@
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "^5.0.4",
+    "alchemy": "^0.83.2",
     "jsdom": "^26.0.0",
     "typescript": "catalog:",
     "vite": "^7.0.2",
