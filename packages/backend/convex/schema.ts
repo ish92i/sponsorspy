@@ -33,7 +33,6 @@ export default defineSchema({
     .index("by_sponsorId_creatorId", ["sponsorId", "creatorId"]),
   sponsors: defineTable({
     name: v.string(),
-    logo: v.string(),
     website: v.string(),
     firstSeen: v.number(),
     lastSeen: v.number(),
