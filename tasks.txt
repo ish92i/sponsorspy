@@ -1,0 +1,115 @@
+# SponsorSpy - Future Tasks & Improvements
+
+## High Priority
+
+### 1. Re-crawling Mechanism
+**Goal**: Periodically re-crawl creators to detect new sponsorships and update metrics.
+
+**Implementation**:
+- Add a scheduled job (Convex cron or external trigger) that:
+  - Queries creators where `lastChecked` is older than X days (e.g., 30 days)
+  - Adds them back to the `crawler_queue` with status "pending"
+  - Prioritizes high-subscriber creators for more frequent checks
+- Consider different refresh intervals based on creator activity:
+  - Active creators (uploads weekly): check every 14 days
+  - Moderate creators (uploads monthly): check every 30 days
+  - Inactive creators: check every 90 days
+
+**Files to modify**:
+- `packages/backend/convex/cron.ts` - Add scheduled re-crawl job
+- `packages/backend/convex/scheduler.ts` - Update logic to handle re-crawl priority
+
+---
+
+### 2. Crawler Robustness & Error Handling
+**Goal**: Make the crawler resilient to failures and provide audit/retry mechanisms.
+
+**Implementation**:
+- **Retry Logic**: 
+  - Track failed crawls in `crawler_queue` with `failureReason` and `lastAttempt`
+  - Implement exponential backoff (retry after 1h, 6h, 24h)
+  - After 3 failures, mark as "failed" and alert for manual review
+  
+- **Audit System**:
+  - Add a `crawl_logs` table to track:
+    - Timestamp, creator handle, success/failure, error details
+    - Number of videos processed, sponsors found
+  - Create a dashboard query to show:
+    - Failed crawls in last 24h
+    - Success rate over time
+    - Common failure patterns
+
+- **Health Checks**:
+  - Add endpoint to test crawler worker health
+  - Monitor for stale queue items (pending for >24h)
+  - Alert if success rate drops below threshold
+
+**Files to modify**:
+- `apps/crawler/src/index.ts` - Add retry logic and better error handling
+- `packages/backend/convex/schema.ts` - Add `crawl_logs` table
+- `packages/backend/convex/discovery.ts` - Update queue management for retries
+
+---
+
+## Medium Priority
+
+### 3. Sponsor Deduplication & Normalization
+**Goal**: Ensure "NordVPN", "Nord VPN", "nordvpn.com" are treated as the same sponsor.
+
+**Implementation**:
+- Create a normalization function for sponsor names:
+  - Remove spaces, convert to lowercase
+  - Strip common suffixes (Inc., LLC, Ltd.)
+  - Handle domain variations (www., .com)
+- Add a `canonical_name` field to sponsors table
+- Before inserting new sponsor, check if canonical version exists
+
+**Files to modify**:
+- `packages/backend/convex/ingest.ts` - Add normalization before upsert
+- `apps/crawler/src/lib/sponsor.ts` - Normalize sponsor names
+
+---
+
+### 4. Analytics Aggregations
+**Goal**: Pre-compute common analytics queries for fast dashboard loading.
+
+**Implementation**:
+- Create Convex queries for:
+  - Top sponsors by total reach (sum of creator subscribers)
+  - Trending sponsors (most new partnerships in last 30 days)
+  - Sponsor retention (average days between first/last seen)
+  - Creator value score (subscribers × avg views × sponsor count)
+
+**Files to create**:
+- `packages/backend/convex/analytics.ts` - Analytics query functions
+
+---
+
+## Low Priority / Nice-to-Have
+
+### 5. Sponsor Contact Information
+**Goal**: Scrape or store sponsor contact info for marketplace features.
+
+**Implementation**:
+- Extend `sponsor_enricher.py` to extract:
+  - Email addresses from contact pages
+  - Social media handles
+  - Support/partnerships URLs
+- Add fields to `sponsors` schema
+
+---
+
+### 6. Historical Sponsorship Tracking
+**Goal**: Track when sponsorships start/end more precisely.
+
+**Implementation**:
+- Create `sponsorship_events` table:
+  - creatorId, sponsorId, eventType (started/ended), timestamp
+- Infer events by comparing crawl results over time
+
+---
+
+## Notes
+- Most of these can be implemented incrementally
+- Re-crawling mechanism is the most critical for data freshness
+- Crawler robustness will save debugging time in the long run
